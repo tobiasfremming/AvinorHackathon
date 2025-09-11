@@ -27,6 +27,14 @@ chatgpt deep research er det noen av flyplassende som vil ha nedsatt kapasitet i
 
 Hente værdata
 
+Holiday data
+
+Kronekursen, lage et sett på gjennomsnitt av kronekurs 3 måneder i forveien
+
+Corona tiltak
+
+
+
 
 
 
