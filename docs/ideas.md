@@ -33,7 +33,6 @@
 - day of week
 - Additional cosine features
 - Is holiday
-- Kronekurs
 
 ## Target fetures
 - atd
@@ -43,8 +42,10 @@
 
 ## Research Tasks
 chatgpt deep research er det noen av flyplassende som vil ha nedsatt kapasitet i oktober 2025?
-
 Hente værdata
-
 Airport congestion metrics
+Holiday data
+Kronekursen, lage et sett på gjennomsnitt av kronekurs 3 måneder i forveien
+Corona tiltak
+
 
