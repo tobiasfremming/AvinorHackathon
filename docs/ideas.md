@@ -14,20 +14,37 @@
 | `atd` | Faktisk avgangstid (actual time of departure) |
 | `ata` | Faktisk ankomstid (actual time of arrival) |
 
-## Features to Engineer/Use
+## Features to Engineer
 - Delay calculations (atd - std, ata - sta)
 - Flight duration (actual vs scheduled)
-- Airport congestion metrics
 - Seasonal patterns
 - Weather impact correlations
-- Cancellation prediction features
+
+## Features to use
+- dep_airport
+- arr_airpor
+- service_type
+- cancelled
+- std
+- sta
+- Flight duration (scheduled)
+- Season (date as cosine?)
+- weather data 
+- day of week
+- Additional cosine features
+- Is holiday
+- Kronekurs
+
+## Target fetures
+- atd
+- ata
+- Delay calculations (atd - std, ata - sta)
+- Flight duration (actual)
 
 ## Research Tasks
 chatgpt deep research er det noen av flyplassende som vil ha nedsatt kapasitet i oktober 2025?
 
 Hente værdata
 
-
-
-
+Airport congestion metrics
 
