@@ -48,4 +48,22 @@ Holiday data
 Kronekursen, lage et sett på gjennomsnitt av kronekurs 3 måneder i forveien
 Corona tiltak
 
+Vindreting + vindstyrke sammen med retningen fra flyplass A til flyplass B (medvind eller motvind)
 
+
+påvirker sykdom concurrency? Det er både mer sykdom om høsten - finne statistisk data om sykdom 
+
+streik - finn data om når flyselskap har streik
+(admin folk streiker minst, eksterne teknikkere blir ansatt under streik, )
+
+baser blir lagt ned (der flyvertinner og piloter bor. Når det blir nedlagt er det veldig stress for flyvertinner)
+
+Er det noen kommende streik fremover? 
+
+på vinter er det mer sbøstorm, det blir glatt på rullebane, kan forsinke eller kansellere fly
+
+Om sommern går siste fly 22 elelrno, om vintern går siste fly klokka 9
+
+latitude og longitude av lufthavn i sin og cos
+
+avstand fra flyplass A til B, lat og long forskjell
