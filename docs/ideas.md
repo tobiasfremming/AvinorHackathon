@@ -67,3 +67,13 @@ Om sommern går siste fly 22 elelrno, om vintern går siste fly klokka 9
 latitude og longitude av lufthavn i sin og cos
 
 avstand fra flyplass A til B, lat og long forskjell
+
+data om hvor tett befolket det er i området
+
+Sekvensielle flyvinger
+
+
+2 forskjellige modeller, en for forsinkelser på bakken, og en for forsinkelser i luften
+
+
+manglende rullebanebelysning kan gjøre at de stenger ved mørkets frembrudd.
