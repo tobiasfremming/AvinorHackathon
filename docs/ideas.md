@@ -77,3 +77,6 @@ Sekvensielle flyvinger
 
 
 manglende rullebanebelysning kan gjøre at de stenger ved mørkets frembrudd.
+
+
+mulig feature: forsinkelsesnivå på hubs
