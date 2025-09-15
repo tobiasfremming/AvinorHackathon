@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "avinor-flight-data": {
+      "command": "python",
+      "args": ["/lhome/kristsey/AvinorHackathon/mcp/run_server.py"],
+      "env": {
+        "PYTHONPATH": "/lhome/kristsey/AvinorHackathon/mcp/src"
+      }
+    }
+  }
+}

@@ -1,26 +1,28 @@
-
 ## Data Columns Available
-| Column | Description |
-|--------|-------------|
-| `flight_id` | Flyvningsnummer, første to tegn identifiserer flyselskapet |
-| `dep_airport` | Avgangsflyplass |
-| `dep_airport_group` | Gruppe som avgangsflyplassen tilhører |
-| `arr_airport` | Ankomstflyplass |
-| `arr_airport_group` | Gruppe som ankomstflyplassen tilhører |
-| `service_type` | Flyvingsart, f.eks. rute, charter, frakt, osv |
-| `cancelled` | 0/1 flagg som indikerer om planlagt flyvning ble kansellert |
-| `std` | Planlagt avgangstid (scheduled time of departure) |
-| `sta` | Planlagt ankomstid (scheduled time of arrival) |
-| `atd` | Faktisk avgangstid (actual time of departure) |
-| `ata` | Faktisk ankomstid (actual time of arrival) |
+
+| Column              | Description                                                 |
+| ------------------- | ----------------------------------------------------------- |
+| `flight_id`         | Flyvningsnummer, første to tegn identifiserer flyselskapet  |
+| `dep_airport`       | Avgangsflyplass                                             |
+| `dep_airport_group` | Gruppe som avgangsflyplassen tilhører                       |
+| `arr_airport`       | Ankomstflyplass                                             |
+| `arr_airport_group` | Gruppe som ankomstflyplassen tilhører                       |
+| `service_type`      | Flyvingsart, f.eks. rute, charter, frakt, osv               |
+| `cancelled`         | 0/1 flagg som indikerer om planlagt flyvning ble kansellert |
+| `std`               | Planlagt avgangstid (scheduled time of departure)           |
+| `sta`               | Planlagt ankomstid (scheduled time of arrival)              |
+| `atd`               | Faktisk avgangstid (actual time of departure)               |
+| `ata`               | Faktisk ankomstid (actual time of arrival)                  |
 
 ## Features to Engineer
+
 - Delay calculations (atd - std, ata - sta)
 - Flight duration (actual vs scheduled)
 - Seasonal patterns
 - Weather impact correlations
 
 ## Features to use
+
 - dep_airport
 - arr_airpor
 - service_type
@@ -29,18 +31,20 @@
 - sta
 - Flight duration (scheduled)
 - Season (date as cosine?)
-- weather data 
+- weather data
 - day of week
 - Additional cosine features
 - Is holiday
 
 ## Target fetures
+
 - atd
 - ata
 - Delay calculations (atd - std, ata - sta)
 - Flight duration (actual)
 
 ## Research Tasks
+
 chatgpt deep research er det noen av flyplassende som vil ha nedsatt kapasitet i oktober 2025?
 Hente værdata
 Airport congestion metrics
@@ -48,8 +52,10 @@ Holiday data
 Kronekursen, lage et sett på gjennomsnitt av kronekurs 3 måneder i forveien
 Corona tiltak
 
+Vindreting + vindstyrke sammen med retningen fra flyplass A til flyplass B (medvind eller motvind)
 
 # Deep research piss å lese gjennom til senere
+
 ## Advanced Feature Engineering for Norwegian Airport Simultaneity Prediction
 
 Norwegian airports present unique operational complexities that demand sophisticated feature engineering approaches combining Arctic meteorological patterns, oil industry dynamics, and European network integration. **October 2025 offers particularly rich prediction opportunities** due to converging factors: northern lights tourism surge, favorable exchange rates driving international travel, post-summer maintenance cycles reducing fleet availability, and transition weather patterns affecting operational capacity.
@@ -107,6 +113,7 @@ The **Norwegian Krone's weakness** (NOK 12.07/EUR as of April 2025) makes Norway
 **Spatio-temporal feature construction** requires four key components: initial state features (aircraft position, speed, heading), arrival pressure (traffic demand density), sequencing pressure (scheduling conflicts), and environmental information integration.
 
 **Network centrality calculations** use weighted approaches:
+
 ```
 Weighted Degree Centrality = Σ(flight_frequency × aircraft_capacity) / total_network_capacity
 Dynamic Betweenness = β(t) accounting for time-varying traffic flows
@@ -114,12 +121,14 @@ Hub Dependency Index = (hub_flights / total_flights) × connection_criticality
 ```
 
 **Delay propagation prediction** employs multi-layer network analysis:
+
 ```
 Delay Propagation Index: DPI(t) = Σ(root_delay × propagation_depth × network_centrality) / total_network_flights
 Cascading Effect Measure: CEM = (secondary_delays / primary_delays) × network_connectivity_coefficient
 ```
 
 **Peak hour concentration metrics** utilize temporal variance:
+
 ```
 Peak Hour Concentration Index: PHCI = (Peak_Hour_Movements / Daily_Total_Movements) × 100
 Temporal Variance Coefficient: TVC = σ(hourly_movements) / μ(hourly_movements)
@@ -140,3 +149,32 @@ Norwegian airport simultaneity prediction benefits from unique feature engineeri
 **October 2025 represents optimal conditions** for model development and testing, with favorable economic conditions, predictable seasonal patterns, and stable operational schedules providing clear baselines for feature validation. The mathematical frameworks identified provide robust implementation pathways, while Norwegian-specific data sources enable localized optimization beyond generic aviation models.
 
 The most significant insight is that **Norwegian aviation operates as both a regional network and European periphery participant**, creating dual optimization requirements that traditional hub-and-spoke or point-to-point models cannot adequately capture. Successful simultaneity prediction must account for this structural complexity through integrated feature engineering approaches combining network analysis, economic correlation, and Arctic operational constraints.
+
+påvirker sykdom concurrency? Det er både mer sykdom om høsten - finne statistisk data om sykdom
+
+streik - finn data om når flyselskap har streik
+(admin folk streiker minst, eksterne teknikkere blir ansatt under streik, )
+
+baser blir lagt ned (der flyvertinner og piloter bor. Når det blir nedlagt er det veldig stress for flyvertinner)
+
+Er det noen kommende streik fremover?
+
+på vinter er det mer sbøstorm, det blir glatt på rullebane, kan forsinke eller kansellere fly
+
+Om sommern går siste fly 22 elelrno, om vintern går siste fly klokka 9
+
+latitude og longitude av lufthavn i sin og cos
+
+avstand fra flyplass A til B, lat og long forskjell
+
+data om hvor tett befolket det er i området
+
+Sekvensielle flyvinger
+
+2 forskjellige modeller, en for forsinkelser på bakken, og en for forsinkelser i luften
+
+manglende rullebanebelysning kan gjøre at de stenger ved mørkets frembrudd.
+
+mulig feature: forsinkelsesnivå på hubs
+
+feature: antall fly per dag
