@@ -10,6 +10,10 @@ class DataPreprocessor:
         """General processing of historical flight data"""
         df_processed_hist = df_hist.copy()
 
+        # Drop rows where cancelled is 1
+        df_processed_hist = df_processed_hist[df_processed_hist["cancelled"] == 0]
+
+
         std_parsed = pd.to_datetime(df_processed_hist['std']) if 'std' in df_processed_hist.columns else None
         sta_parsed= pd.to_datetime(df_processed_hist['sta']) if 'sta' in df_processed_hist.columns else None
         
