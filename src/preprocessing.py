@@ -81,7 +81,8 @@ class DataPreprocessor:
         return df_processed_fut
     
 if __name__ == "__main__":
-    df_hist = pd.read_csv(os.path.abspath("data/historical_flights.csv"))
+    df_hist_original = pd.read_csv(os.path.abspath("data/historical_flights.csv"))
+    df_hist = df_hist_original.copy()
     preprocessor = DataPreprocessor()
     df_processed_hist = preprocessor.process_hist_flights_cancelled(df_hist)
     print(df_processed_hist.head())

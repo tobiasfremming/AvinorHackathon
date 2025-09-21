@@ -178,3 +178,7 @@ manglende rullebanebelysning kan gjøre at de stenger ved mørkets frembrudd.
 mulig feature: forsinkelsesnivå på hubs
 
 feature: antall fly per dag
+
+feature: antall fridager utenom helg det er den uken?
+
+
