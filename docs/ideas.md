@@ -87,15 +87,11 @@ feature: antall fly per dag
 Sannsynligvis ikke så kritisk men gøy ting å vurdere: Oil industry helicopter schedules (Stavanger)
 
 
-
-
-
-
-
-Afras Mansoor
-  00:52
 Også en liten tanke, siden vi har tilgang til alle flyvninger, tror jeg det kan være lurt å se på om samme flyet skal ta flere flyvninger samme dag. Tror om et fly skal fra oslo til bergen til trondheim og viderre igjhen samme dag, øker det sannsynlighet for forsinkelse litt på siste flyplass f.eks
 00:52
 og bare generelt det at flyvninger er ikke uavhengige
 00:54
 Og bare ha en feature som er generell trafikk/størrelse eller noe relativt som sier noe om mengden flyvninger per flyplass
+
+feature: antall fridager utenom helg det er den uken?
+

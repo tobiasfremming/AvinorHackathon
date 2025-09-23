@@ -1,0 +1,8 @@
+weekday,dow,total_flights,avg_delay_minutes,airports
+Monday,0,65898.0,2.95,44.0
+Tuesday,1,65716.0,0.86,49.0
+Wednesday,2,66711.0,1.94,53.0
+Thursday,3,65217.0,2.44,49.0
+Friday,4,65353.0,3.96,47.0
+Saturday,5,16658.0,2.75,42.0
+Sunday,6,45303.0,4.01,46.0
