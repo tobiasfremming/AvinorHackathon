@@ -204,7 +204,7 @@ def create_concurrency_lookup_dataset(
     data_dir = Path(data_dir) if data_dir else DATA_DIR
     output_path = data_dir / output_filename
     
-    print(f"🔄 Computing concurrency lookup dataset...")
+    print(f"Computing concurrency lookup dataset...")
     
     # Compute concurrency with groups
     counts_time, _, coverage_df = compute_concurrency_with_coverage(
@@ -243,14 +243,14 @@ def create_concurrency_lookup_dataset(
                 lookup_records.append(record)
                 
             except Exception as e:
-                print(f"⚠️ Warning: Error processing {entity} at {timestamp}: {e}")
+                print(f"Warning: Error processing {entity} at {timestamp}: {e}")
                 continue
     
     # Create DataFrame
     lookup_df = pd.DataFrame(lookup_records)
     
     if lookup_df.empty:
-        print("⚠️ Warning: No concurrency data generated")
+        print("Warning: No concurrency data generated")
         return output_path
     
     # Add airport group mapping if available
@@ -283,7 +283,7 @@ def create_concurrency_lookup_dataset(
     # Save dataset
     lookup_df.to_csv(output_path, index=False)
     
-    print(f"✅ Concurrency lookup dataset saved: {output_path}")
+    print(f"Concurrency lookup dataset saved: {output_path}")
     print(f"   Shape: {lookup_df.shape}")
     print(f"   Time range: {lookup_df['datetime'].min()} to {lookup_df['datetime'].max()}")
     print(f"   Entities: {lookup_df['entity'].nunique()}")
