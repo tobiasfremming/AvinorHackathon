@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 license-files = ["LICENSE"]
 dependencies = [
+    "holidays>=0.81",
     "pandas>=2.3.2",
 ]
 
