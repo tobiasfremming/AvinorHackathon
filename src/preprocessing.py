@@ -13,6 +13,19 @@ class DataPreprocessor:
         """General processing of historical flight data"""
         df_processed_hist = df_hist.copy()
 
+        # Fill missing airport groups with "OUT"
+        df_processed_hist["arr_airport_group"] = df_processed_hist[
+            "arr_airport_group"
+        ].fillna("OUT")
+        df_processed_hist["dep_airport_group"] = df_processed_hist[
+            "dep_airport_group"
+        ].fillna("OUT")
+
+        # Fill missing service_type values within each flight_id group and keep original format
+        df_processed_hist["service_type"] = df_processed_hist["service_type"].fillna(
+            "X"
+        )
+
         # Drop rows where cancelled is 1
         df_processed_hist = df_processed_hist[df_processed_hist["cancelled"] == 0]
 
@@ -44,18 +57,14 @@ class DataPreprocessor:
         df_processed_hist["atd"] = atd_parsed
         df_processed_hist["ata"] = ata_parsed
 
-        # Fill missing service_type values within each flight_id group and keep original format
-        df_processed_hist["service_type"] = df_processed_hist.groupby("flight_id")[
-            "service_type"
-        ].transform(lambda x: x.ffill().bfill())
-
-        # Drop rows where atd and ata are missing, or cancelled is 1
-        df_processed_hist = df_processed_hist.dropna(subset=["atd", "ata"])
-        df_processed_hist = df_processed_hist[df_processed_hist["cancelled"] != 1]
         # remove cancelled column
         df_processed_hist = df_processed_hist.drop(columns=["cancelled"])
-
         print("Missing values after processing:")
+        print(df_processed_hist.isna().sum())
+
+        print("dropping rows with missing actual times")
+        df_processed_hist = df_processed_hist.dropna(subset=["atd", "ata"])
+        print("Final missing values:")
         print(df_processed_hist.isna().sum())
         return df_processed_hist
 
@@ -94,10 +103,13 @@ class DataPreprocessor:
         # drop actual times for cancellation prediction
         df_processed_hist = df_processed_hist.drop(columns=["atd", "ata"])
 
-        # Fill missing service_type values within each flight_id group and keep original format
-        df_processed_hist["service_type"] = df_processed_hist.groupby("flight_id")[
-            "service_type"
-        ].transform(lambda x: x.ffill().bfill())
+        # Fill missing
+        df_processed_hist["arrival_airport_group"] = df_processed_hist[
+            "arrival_airport_group"
+        ].fillna("OUT")
+        df_processed_hist["departure_airport_group"] = df_processed_hist[
+            "departure_airport_group"
+        ].fillna("OUT")
 
         print("Missing values after processing:")
         print(df_processed_hist.isna().sum())
