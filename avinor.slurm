@@ -27,13 +27,8 @@ python -m venv autogluon_venv
 source autogluon_venv/bin/activate
 pip install --upgrade pip
 
-# Install AutoGluon first (picky about dependency versions)
-pip install autogluon.tabular
-
-# Install minimal requirements for autogluon.py
-if [ -f "requirements_minimal.txt" ]; then
-    pip install -r requirements_minimal.txt
-fi
+# Install AutoGluon with force-reinstall to handle conflicts
+pip install --force-reinstall autogluon.tabular
 
 # Set multiprocessing environment for AutoGluon
 export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK:-16}
