@@ -3,12 +3,213 @@ from typing import Optional
 
 import numpy as np
 import pandas as pd
+import datetime
+import requests
+from functools import lru_cache
+from typing import List, Dict, Tuple
+import logging
 
 from src.preprocessing import DataPreprocessor
-from src.concurrency import compute_concurrency_with_coverage
+from src.traffic import compute_concurrency_with_coverage
 
 
 DATA_DIR = Path(__file__).resolve().parents[1] / "data"
+
+# Set up logging for holiday functions
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+def get_supported_countries():
+    """Get all countries supported by OpenHolidaysAPI."""
+    return {
+        'albania': 'AL', 'andorra': 'AD', 'austria': 'AT', 'belarus': 'BY', 'belgium': 'BE',
+        'brazil': 'BR', 'bulgaria': 'BG', 'croatia': 'HR', 'czechia': 'CZ', 'estonia': 'EE',
+        'france': 'FR', 'germany': 'DE', 'hungary': 'HU', 'ireland': 'IE', 'italy': 'IT',
+        'latvia': 'LV', 'liechtenstein': 'LI', 'lithuania': 'LT', 'luxembourg': 'LU',
+        'malta': 'MT', 'mexico': 'MX', 'moldova': 'MD', 'monaco': 'MC', 'netherlands': 'NL',
+        'poland': 'PL', 'portugal': 'PT', 'romania': 'RO', 'san marino': 'SM', 'serbia': 'RS',
+        'slovakia': 'SK', 'slovenia': 'SI', 'south africa': 'ZA', 'spain': 'ES',
+        'sweden': 'SE', 'switzerland': 'CH', 'vatican city': 'VA',
+        # Common aliases
+        'czech republic': 'CZ', 'vatican': 'VA', 'norway': 'NO'  # Add Norway support
+    }
+
+
+def fetch_school_holidays(country_code: str, year: int) -> List[Dict]:
+    """Fetch school holidays from OpenHolidaysAPI."""
+    countries = get_supported_countries()
+
+    # Convert country name to ISO code
+    if country_code.lower() in countries:
+        iso_code = countries[country_code.lower()]
+    else:
+        iso_code = country_code.upper()
+
+    url = "https://openholidaysapi.org/SchoolHolidays"
+    params = {
+        'countryIsoCode': iso_code,
+        'languageIsoCode': 'EN',
+        'validFrom': f'{year}-01-01',
+        'validTo': f'{year}-12-31'
+    }
+
+    try:
+        response = requests.get(url, params=params, timeout=10)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            return []
+    except:
+        return []
+
+
+@lru_cache(maxsize=128)
+def fetch_school_holidays_cached(country_code: str, year: int) -> tuple:
+    """
+    Cached version of fetch_school_holidays to avoid repeated API calls.
+    Returns tuple to make it hashable for caching.
+    """
+    holidays = fetch_school_holidays(country_code, year)
+    # Convert to tuple of tuples for caching
+    return tuple((h.get('startDate', ''), h.get('endDate', ''), h.get('name', [{}])[0].get('text', ''))
+                 for h in holidays if isinstance(h, dict))
+
+
+def is_vacation_day(date, country_code: str, buffer_days: int = 2) -> int:
+    """
+    Given a date and country code, return if the day is in vacation period.
+    Uses OpenHolidaysAPI to get actual school holidays for the country.
+    Returns 1 if in vacation (includes ±buffer_days buffer), 0 otherwise.
+
+    Args:
+        date: Date string or datetime object
+        country_code: Country name or ISO code
+        buffer_days: Number of buffer days around holidays (default: 2)
+
+    Returns:
+        1 if in vacation period (including buffer), 0 otherwise
+    """
+    try:
+        if isinstance(date, str):
+            date_obj = datetime.datetime.strptime(date, '%Y-%m-%d').date()
+        else:
+            date_obj = pd.to_datetime(date).date()
+
+        year = date_obj.year
+
+        # Use cached version
+        holidays_tuple = fetch_school_holidays_cached(country_code, year)
+
+        for start_date_str, end_date_str, name in holidays_tuple:
+            if not start_date_str or not end_date_str:
+                continue
+
+            try:
+                start_date = datetime.datetime.strptime(start_date_str[:10], '%Y-%m-%d').date()
+                end_date = datetime.datetime.strptime(end_date_str[:10], '%Y-%m-%d').date()
+
+                # Add configurable buffer
+                start_buffered = start_date - datetime.timedelta(days=buffer_days)
+                end_buffered = end_date + datetime.timedelta(days=buffer_days)
+
+                if start_buffered <= date_obj <= end_buffered:
+                    logger.debug(f"Date {date_obj} falls within {name} ({start_date} to {end_date}) with {buffer_days}-day buffer")
+                    return 1
+
+            except (ValueError, TypeError) as e:
+                logger.warning(f"Error parsing dates for holiday {name}: {e}")
+                continue
+
+        return 0
+
+    except Exception as e:
+        logger.error(f"Error in is_vacation_day for {date}, {country_code}: {e}")
+        return 0
+
+
+def add_holiday_features(
+    df: pd.DataFrame,
+    date_col: str = 'flight_datetime_hour',
+    country_code: str = 'norway',
+    buffer_days: int = 2,
+) -> pd.DataFrame:
+    """
+    Add holiday/vacation season features to flight data.
+
+    Args:
+        df: DataFrame with flight data
+        date_col: Column name containing dates
+        country_code: Country to get holiday data for (default: 'norway')
+        buffer_days: Buffer days around holidays (default: 2)
+
+    Returns:
+        DataFrame with added holiday features
+    """
+    if df is None or df.empty:
+        return df
+
+    out = df.copy()
+
+    if date_col not in out.columns:
+        print(f"⚠️ Date column '{date_col}' not found. Skipping holiday features.")
+        return out
+
+    print(f"🎄 Adding holiday features for {country_code}...")
+
+    # Ensure date column is datetime
+    out[date_col] = pd.to_datetime(out[date_col], utc=True)
+
+    # Extract date for holiday lookup
+    out['date_only'] = out[date_col].dt.date
+
+    # Add vacation season indicator
+    out['is_vacation_season'] = out['date_only'].apply(
+        lambda x: is_vacation_day(x, country_code, buffer_days)
+    )
+
+    # If no vacation data found (e.g., for Norway/Sweden), use European default patterns
+    if out['is_vacation_season'].sum() == 0:
+        print(f"⚠️ No holiday data found for {country_code}, using European default patterns with German Easter dates")
+
+        # European school holiday approximations
+        month = out[date_col].dt.month
+        day = out[date_col].dt.day
+
+        # Summer holidays (mid June to mid August)
+        summer_holidays = ((month == 6) & (day >= 15)) | (month == 7) | ((month == 8) & (day <= 15))
+
+        # Winter holidays (mid December to early January)
+        winter_holidays = ((month == 12) & (day >= 20)) | ((month == 1) & (day <= 8))
+
+        # Get Easter dates from Germany (since Easter is the same across Western Europe)
+        easter_holidays_from_api = out['date_only'].apply(
+            lambda x: is_vacation_day(x, 'germany', buffer_days) if x.month in [3, 4] else 0
+        )
+
+        # Autumn break (mid to late October)
+        autumn_holidays = (month == 10) & (day >= 15) & (day <= 25)
+
+        # Winter break (late February)
+        winter_break = (month == 2) & (day >= 20)
+
+        out['is_vacation_season'] = (summer_holidays | winter_holidays | easter_holidays_from_api |
+                                   autumn_holidays | winter_break).astype(int)
+
+    # Add specific holiday periods (common European patterns)
+    out['is_summer_vacation'] = out[date_col].dt.month.isin([7, 8]).astype(int)
+    out['is_winter_vacation'] = out[date_col].dt.month.isin([12, 1]).astype(int)
+    out['is_easter_period'] = ((out[date_col].dt.month == 3) |
+                               ((out[date_col].dt.month == 4) & (out[date_col].dt.day <= 15))).astype(int)
+
+    # Remove temporary column
+    out = out.drop('date_only', axis=1)
+
+    vacation_count = out['is_vacation_season'].sum()
+    total_count = len(out)
+    print(f"✅ Added holiday features: {vacation_count}/{total_count} ({vacation_count/total_count*100:.1f}%) flights in vacation periods")
+
+    return out
 
 
 def build_flight_weather_features(
@@ -21,6 +222,8 @@ def build_flight_weather_features(
     add_time_features: bool = True,
     compute_relative_wind: bool = True,
     include_concurrency_features: bool = True,
+    include_holiday_features: bool = True,
+    holiday_country: str = 'norway',
 ) -> pd.DataFrame:
     """Produce merged flight+weather features.
 
@@ -39,6 +242,8 @@ def build_flight_weather_features(
         add_time_features=add_time_features,
         compute_relative_wind=compute_relative_wind,
         include_concurrency_features=include_concurrency_features,
+        include_holiday_features=include_holiday_features,
+        holiday_country=holiday_country,
     )
 
     merged = pipeline_outputs["merged"]
@@ -59,6 +264,8 @@ def flight_weather_pipeline(
     add_time_features: bool = True,
     compute_relative_wind: bool = True,
     include_concurrency_features: bool = True,
+    include_holiday_features: bool = True,
+    holiday_country: str = 'norway',
 ) -> dict:
     """Run a deterministic pipeline that returns intermediate artifacts.
 
@@ -118,12 +325,58 @@ def flight_weather_pipeline(
             merged, df_flights=processed_flights, df_airports=df_airports
         )
 
+    # Add holiday/vacation features (optional)
+    if include_holiday_features:
+        merged = add_holiday_features(merged, country_code=holiday_country)
+
+        # Add flight distance feature (in kilometers)
+        merged = add_flight_distance_feature(merged, df_airports=df_airports)
+
     return {
         "processed_flights": processed_flights,
         "cleaned_weather": cleaned_weather,
         "weather_features": weather_features,
         "merged": merged,
     }
+def haversine_distance(lat1, lon1, lat2, lon2):
+    """Calculate the great-circle distance between two points on the Earth (in km)."""
+    import math
+    R = 6371.0  # Earth radius in kilometers
+    if any(pd.isna([lat1, lon1, lat2, lon2])):
+        return np.nan
+    lat1, lon1, lat2, lon2 = map(float, [lat1, lon1, lat2, lon2])
+    phi1, phi2 = math.radians(lat1), math.radians(lat2)
+    dphi = math.radians(lat2 - lat1)
+    dlambda = math.radians(lon2 - lon1)
+    a = math.sin(dphi/2)**2 + math.cos(phi1)*math.cos(phi2)*math.sin(dlambda/2)**2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    return R * c
+
+def add_flight_distance_feature(df, df_airports=None, dep_col_candidates=None, arr_col_candidates=None):
+    """
+    Adds 'flight_distance_km' column to df using airport coordinates from df_airports.
+    """
+    out = df.copy()
+    dep_candidates = dep_col_candidates or ['dep_airport', 'origin', 'departure_airport', 'dep']
+    arr_candidates = arr_col_candidates or ['arr_airport', 'destination', 'arrival_airport', 'arr']
+    dep_col = next((c for c in dep_candidates if c in out.columns), None)
+    arr_col = next((c for c in arr_candidates if c in out.columns), None)
+    if df_airports is None or dep_col is None or arr_col is None:
+        out['flight_distance_km'] = np.nan
+        return out
+    coords = df_airports.set_index('iata_code')[['latitude', 'longitude']].to_dict('index')
+    def lookup_coords(code):
+        if pd.isna(code):
+            return (np.nan, np.nan)
+        if code in coords:
+            return (coords[code]['latitude'], coords[code]['longitude'])
+        return (np.nan, np.nan)
+    def compute_distance(row):
+        lat1, lon1 = lookup_coords(row[dep_col])
+        lat2, lon2 = lookup_coords(row[arr_col])
+        return haversine_distance(lat1, lon1, lat2, lon2)
+    out['flight_distance_km'] = out.apply(compute_distance, axis=1)
+    return out
 
 
 def compute_flight_relative_wind(
@@ -323,10 +576,10 @@ def add_concurrency_features(
     - origin_group_departures_hour, origin_group_arrivals_hour (by airport group if available)
     - dest_group_departures_hour, dest_group_arrivals_hour
     """
-    from src.concurrency import (
-        load_concurrency_lookup,
-        create_concurrency_lookup_dataset,
-    )
+    from src.traffic import load_concurrency_lookup, create_concurrency_lookup_dataset
+    
+
+    
 
     if df is None or df.empty:
         return df

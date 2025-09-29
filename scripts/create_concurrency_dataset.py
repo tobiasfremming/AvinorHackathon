@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Script to pre-compute concurrency lookup dataset for fast feature engineering.
+Script to pre-compute traffic lookup dataset for fast feature engineering.
 
 Usage:
-    python scripts/create_concurrency_dataset.py
+    python scripts/create_traffic_dataset.py
 """
 
 import sys
@@ -13,12 +13,12 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from src.concurrency import create_concurrency_lookup_dataset
+from src.traffic import create_traffic_lookup_dataset
 import pandas as pd
 
 
 def main():
-    """Create concurrency lookup dataset"""
+    """Create traffic lookup dataset"""
     # Define data directory
     data_dir = Path(__file__).parent.parent / "data"
 
@@ -44,7 +44,7 @@ def main():
     print("Creating concurrency lookup dataset...")
 
     try:
-        dataset_path = create_concurrency_lookup_dataset(
+        dataset_path = create_traffic_lookup_dataset(
             df_flights=df_flights,
             df_airports=df_airports,
             data_dir=data_dir,
@@ -55,13 +55,13 @@ def main():
         print(f"Success! Concurrency dataset created at: {dataset_path}")
 
         # Also create airport-level dataset
-        airport_dataset_path = create_concurrency_lookup_dataset(
+        airport_dataset_path = create_traffic_lookup_dataset(
             df_flights=df_flights,
             df_airports=df_airports,
             data_dir=data_dir,
-            output_filename="concurrency_lookup_airports.csv",
-            freq="H",
-            by_groups=False,
+            output_filename="traffic_lookup_airports.csv",
+            freq='H',
+            by_groups=False
         )
 
         print(f"Airport-level dataset created at: {airport_dataset_path}")
@@ -69,7 +69,7 @@ def main():
         return 0
 
     except Exception as e:
-        print(f"Error creating concurrency dataset: {e}")
+        print(f"Error creating traffic dataset: {e}")
         import traceback
 
         traceback.print_exc()
