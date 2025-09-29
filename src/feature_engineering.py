@@ -263,7 +263,7 @@ def build_flight_weather_features(
     merged = merged.drop(columns=[col for col in merged.columns if 'datetime' in col or col in ['flight_datetime_hour', 'time_hour', 'date']], errors='ignore')
 
     # Remove raw time columns after all features are created
-    merged = merged.drop(columns=[col for col in ['std', 'sta', 'atd', 'ata'] if col in merged.columns], errors='ignore')
+    # merged = merged.drop(columns=[col for col in ['std', 'sta', 'atd', 'ata'] if col in merged.columns], errors='ignore')
 
     if save:
         save_flight_weather_features(
