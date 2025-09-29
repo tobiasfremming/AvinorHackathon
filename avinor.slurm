@@ -5,6 +5,8 @@
 #SBATCH --partition=GPUQ          # GPU partition
 #SBATCH --mem=64G                 # Asking for 64GB RAM
 #SBATCH --nodes=1
+#SBATCH --gres=gpu:1              # Request 1 GPU
+#SBATCH --cpus-per-task=16        # Request 16 CPU cores
 #SBATCH --output=outavinor.txt      # Specifying 'stdout'
 #SBATCH --error=outavinor.err        # Specifying 'stderr'
 #SBATCH --mail-user=afrasum@stud.ntnu.no
@@ -32,6 +34,9 @@ export PIP_NO_DEPS=false
 export PIP_IGNORE_INSTALLED=true
 
 pip install --upgrade pip
+
+# Install PyTorch with CUDA support first
+pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cu118
 
 # Install AutoGluon with all ML libraries
 pip install --no-cache-dir "autogluon.tabular[all]"
