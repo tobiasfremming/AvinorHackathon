@@ -217,7 +217,7 @@ def build_flight_weather_features(
     df_weather: Optional[pd.DataFrame] = None,
     df_airports: Optional[pd.DataFrame] = None,
     data_dir: Optional[Path] = None,
-    save: bool = False,
+    save: bool = True,
     out_filename: str = "flight_weather_features.csv",
     add_time_features: bool = True,
     compute_relative_wind: bool = True,
@@ -246,7 +246,24 @@ def build_flight_weather_features(
         holiday_country=holiday_country,
     )
 
+
     merged = pipeline_outputs["merged"]
+
+    # Add 'year' feature from main datetime column (if present)
+    datetime_cols = [col for col in merged.columns if 'datetime' in col or col in ['flight_datetime_hour', 'time_hour', 'date']]
+    main_dt_col = None
+    for col in ['flight_datetime_hour', 'datetime', 'time_hour', 'date']:
+        if col in merged.columns:
+            main_dt_col = col
+            break
+    if main_dt_col:
+        merged['year'] = pd.to_datetime(merged[main_dt_col], errors='coerce').dt.year
+
+    # Remove all datetime columns
+    merged = merged.drop(columns=[col for col in merged.columns if 'datetime' in col or col in ['flight_datetime_hour', 'time_hour', 'date']], errors='ignore')
+
+    # Remove raw time columns after all features are created
+    # merged = merged.drop(columns=[col for col in ['std', 'sta', 'atd', 'ata'] if col in merged.columns], errors='ignore')
 
     if save:
         save_flight_weather_features(

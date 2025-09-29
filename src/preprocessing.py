@@ -13,6 +13,20 @@ class DataPreprocessor:
         """General processing of historical flight data"""
         df_processed_hist = df_hist.copy()
 
+        # Add cyclical temporal features for std, sta, atd, ata
+        def add_time_sin_cos(df, col):
+            if col in df.columns:
+                dt = pd.to_datetime(df[col], errors='coerce')
+                df[f'{col}_hour'] = dt.dt.hour
+                df[f'{col}_minute'] = dt.dt.minute
+                time_float = df[f'{col}_hour'] + df[f'{col}_minute'] / 60.0
+                df[f'{col}_sin'] = np.sin(2 * np.pi * time_float / 24)
+                df[f'{col}_cos'] = np.cos(2 * np.pi * time_float / 24)
+            return df
+
+        for time_col in ['std', 'sta', 'atd', 'ata']:
+            df_processed_hist = add_time_sin_cos(df_processed_hist, time_col)
+
         # Fill missing airport groups with "OUT"
         df_processed_hist["arr_airport_group"] = df_processed_hist[
             "arr_airport_group"
