@@ -33,8 +33,11 @@ export PIP_IGNORE_INSTALLED=true
 
 pip install --upgrade pip
 
+# Install required dependencies first
+pip install --no-cache-dir typing_extensions
+
 # Install AutoGluon in isolated environment
-pip install --no-cache-dir --isolated autogluon.tabular
+pip install --no-cache-dir autogluon.tabular
 
 # Set multiprocessing environment for AutoGluon
 export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK:-16}
