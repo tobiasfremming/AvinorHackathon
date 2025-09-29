@@ -450,22 +450,40 @@ def prepare_data_for_modeling(df_complete):
 
 
 # ============================================================================
-# AUTOGLUON TRAINING
+# AUTOGLUON TRAINING - HPC OPTIMIZED WITH RAY
 # ============================================================================
 
 def train_autogluon_models(df_model, time_limit_per_model=1800):
-    """Train AutoGluon models for both ATD and ATA prediction."""
+    """Train AutoGluon models for both ATD and ATA prediction with HPC optimization."""
 
-    # Configure for multiprocessing (disable Ray, use native multiprocessing)
     import os
     import multiprocessing
-    os.environ['RAY_DISABLE_IMPORT_WARNING'] = '1'
-    os.environ['AUTOGLUON_ENABLE_RAY'] = 'False'
 
-    # Set thread count: use SLURM allocation if available, otherwise use all CPU cores
-    num_threads = os.environ.get('SLURM_CPUS_PER_TASK', str(multiprocessing.cpu_count()))
-    os.environ['OMP_NUM_THREADS'] = num_threads
-    os.environ['MKL_NUM_THREADS'] = num_threads
+    # HPC Ray configuration for maximum performance
+    num_cpus = int(os.environ.get('SLURM_CPUS_PER_TASK', multiprocessing.cpu_count()))
+    print(f"Configuring Ray for HPC with {num_cpus} CPUs")
+
+    # Initialize Ray for HPC
+    try:
+        import ray
+        if not ray.is_initialized():
+            ray.init(
+                num_cpus=num_cpus,
+                num_gpus=0,
+                object_store_memory=2000000000,  # 2GB object store
+                ignore_reinit_error=True,
+                log_to_driver=False
+            )
+            print(f"Ray initialized successfully with {num_cpus} CPUs")
+    except Exception as e:
+        print(f"Ray initialization failed: {e}")
+        print("Falling back to non-Ray mode")
+        os.environ['AUTOGLUON_ENABLE_RAY'] = 'False'
+
+    # Set performance environment variables
+    os.environ['OMP_NUM_THREADS'] = str(num_cpus)
+    os.environ['MKL_NUM_THREADS'] = str(num_cpus)
+    os.environ['NUMBA_NUM_THREADS'] = str(num_cpus)
 
     # Split data
     feature_columns = [col for col in df_model.columns if col not in ['target_atd', 'target_ata']]
@@ -494,7 +512,7 @@ def train_autogluon_models(df_model, time_limit_per_model=1800):
     print(f"Test set: {X_test.shape}")
     print(f"Features: {len(feature_columns)}")
 
-    # Configure AutoGluon predictors with multiprocessing
+    # Configure AutoGluon predictors for maximum performance
     predictor_atd = TabularPredictor(
         label='target_atd',
         problem_type='regression',
@@ -509,20 +527,24 @@ def train_autogluon_models(df_model, time_limit_per_model=1800):
         path='./autogluon_models_ata/'
     )
 
-    # Train models
-    print("Training Actual Time of Departure (ATD) model...")
+    # Train models with maximum performance settings
+    print("Training Actual Time of Departure (ATD) model with best quality...")
     predictor_atd.fit(
         train_data_atd,
         time_limit=time_limit_per_model,
         presets='best_quality',
+        dynamic_stacking=True,  # Enable for maximum performance on HPC
+        num_cpus=num_cpus,
         verbosity=2
     )
 
-    print("Training Actual Time of Arrival (ATA) model...")
+    print("Training Actual Time of Arrival (ATA) model with best quality...")
     predictor_ata.fit(
         train_data_ata,
         time_limit=time_limit_per_model,
         presets='best_quality',
+        dynamic_stacking=True,  # Enable for maximum performance on HPC
+        num_cpus=num_cpus,
         verbosity=2
     )
 
@@ -567,7 +589,7 @@ def predict_flight_times(predictor_atd, predictor_ata, flight_features):
 def main():
     """Run the complete AutoGluon flight prediction pipeline."""
     print("=" * 60)
-    print("AutoGluon Flight Time Prediction Pipeline")
+    print("AutoGluon Flight Time Prediction Pipeline - HPC Optimized")
     print("=" * 60)
 
     # Load raw flight data
