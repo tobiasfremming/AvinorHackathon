@@ -30,13 +30,10 @@ pip install --upgrade pip
 # Install AutoGluon first (picky about dependency versions)
 pip install autogluon.tabular
 
-# Install any additional requirements if they exist
-if [ -f "requirements.txt" ]; then
-    pip install -r requirements.txt
+# Install minimal requirements for autogluon.py
+if [ -f "requirements_minimal.txt" ]; then
+    pip install -r requirements_minimal.txt
 fi
-
-# Install any remaining packages that might be needed
-pip install pyproject-toml
 
 # Set multiprocessing environment for AutoGluon
 export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK:-16}
