@@ -275,17 +275,12 @@ def create_concurrency_lookup_dataset(
     output_filename: str = "concurrency_lookup.csv",
     freq: str = "H",
     by_groups: bool = True,
+    include_both: bool = True,
 ) -> Path:
     """Create and save a concurrency lookup dataset for fast feature engineering.
 
-    This creates a flattened lookup table with columns:
-    - datetime: hour timestamp
-    - airport: airport code
-    - airport_group: airport group (if available)
-    - dep_concurrency: departures count for this hour
-    - arr_concurrency: arrivals count for this hour
-    - dep_concurrency_group: group departures (if by_groups=True)
-    - arr_concurrency_group: group arrivals (if by_groups=True)
+    This creates a flattened lookup table with both airport and group level data.
+    If include_both=True, generates entries for both individual airports and groups.
 
     Returns the path to the saved dataset.
     """
@@ -294,55 +289,7 @@ def create_concurrency_lookup_dataset(
 
     print(f"Computing concurrency lookup dataset...")
 
-    # Compute concurrency with groups
-    counts_time, _, coverage_df = compute_concurrency_with_coverage(
-        df_flights=df_flights,
-        df_airports=df_airports,
-        freq=freq,
-        by_groups=by_groups,
-        include_master_only=True,
-    )
-
-    # Create flattened lookup table
-    lookup_records = []
-
-    # Get time index
-    time_index = counts_time.index
-
-    # Process each timestamp
-    for timestamp in time_index:
-        timestamp_data = counts_time.loc[timestamp]
-
-        # Extract departures and arrivals for each entity
-        entities = timestamp_data.index.get_level_values(0).unique()
-
-        for entity in entities:
-            try:
-                dep_count = timestamp_data.get((entity, "departures"), 0)
-                arr_count = timestamp_data.get((entity, "arrivals"), 0)
-
-                record = {
-                    "datetime": timestamp,
-                    "entity": entity,
-                    "dep_concurrency": int(dep_count) if pd.notna(dep_count) else 0,
-                    "arr_concurrency": int(arr_count) if pd.notna(arr_count) else 0,
-                }
-
-                lookup_records.append(record)
-
-            except Exception as e:
-                print(f"Warning: Error processing {entity} at {timestamp}: {e}")
-                continue
-
-    # Create DataFrame
-    lookup_df = pd.DataFrame(lookup_records)
-
-    if lookup_df.empty:
-        print("Warning: No concurrency data generated")
-        return output_path
-
-    # Add airport group mapping if available
-    # Try to load airport groups from separate file
+    # Load airport group mapping
     airport_group_map = {}
     if data_dir:
         airport_groups_file = data_dir / "avinor_data/airportgroups.csv"
@@ -360,17 +307,86 @@ def create_concurrency_lookup_dataset(
             except Exception as e:
                 print(f"   Warning: Could not load airport groups: {e}")
 
-    # Determine if entity is airport or group and add appropriate columns
-    if by_groups:
-        lookup_df["airport_group"] = lookup_df["entity"]
-        lookup_df["airport"] = None  # Groups don't map to individual airports
-    else:
-        lookup_df["airport"] = lookup_df["entity"]
-        lookup_df["airport_group"] = lookup_df["airport"].map(airport_group_map)
-        # Fill NaN airport groups with the airport code itself as fallback
-        lookup_df["airport_group"] = lookup_df["airport_group"].fillna(
-            lookup_df["airport"]
+    all_lookup_records = []
+
+    # Generate airport-level data if requested
+    if include_both or not by_groups:
+        print("   Computing airport-level concurrency...")
+        counts_time_airports, _, _ = compute_concurrency_with_coverage(
+            df_flights=df_flights,
+            df_airports=df_airports,
+            freq=freq,
+            by_groups=False,  # Individual airports
+            include_master_only=True,
         )
+
+        # Process airport-level data
+        for timestamp in counts_time_airports.index:
+            timestamp_data = counts_time_airports.loc[timestamp]
+            entities = timestamp_data.index.get_level_values(0).unique()
+
+            for entity in entities:
+                try:
+                    dep_count = timestamp_data.get((entity, "departures"), 0)
+                    arr_count = timestamp_data.get((entity, "arrivals"), 0)
+
+                    record = {
+                        "datetime": timestamp,
+                        "entity": entity,
+                        "dep_concurrency": int(dep_count) if pd.notna(dep_count) else 0,
+                        "arr_concurrency": int(arr_count) if pd.notna(arr_count) else 0,
+                        "airport": entity,  # Individual airport code
+                        "airport_group": airport_group_map.get(entity, entity),  # Map to group
+                    }
+
+                    all_lookup_records.append(record)
+
+                except Exception as e:
+                    print(f"Warning: Error processing airport {entity} at {timestamp}: {e}")
+                    continue
+
+    # Generate group-level data if requested
+    if include_both or by_groups:
+        print("   Computing group-level concurrency...")
+        counts_time_groups, _, _ = compute_concurrency_with_coverage(
+            df_flights=df_flights,
+            df_airports=df_airports,
+            freq=freq,
+            by_groups=True,  # Airport groups
+            include_master_only=True,
+        )
+
+        # Process group-level data
+        for timestamp in counts_time_groups.index:
+            timestamp_data = counts_time_groups.loc[timestamp]
+            entities = timestamp_data.index.get_level_values(0).unique()
+
+            for entity in entities:
+                try:
+                    dep_count = timestamp_data.get((entity, "departures"), 0)
+                    arr_count = timestamp_data.get((entity, "arrivals"), 0)
+
+                    record = {
+                        "datetime": timestamp,
+                        "entity": entity,
+                        "dep_concurrency": int(dep_count) if pd.notna(dep_count) else 0,
+                        "arr_concurrency": int(arr_count) if pd.notna(arr_count) else 0,
+                        "airport": None,  # No individual airport for groups
+                        "airport_group": entity,  # Group identifier
+                    }
+
+                    all_lookup_records.append(record)
+
+                except Exception as e:
+                    print(f"Warning: Error processing group {entity} at {timestamp}: {e}")
+                    continue
+
+    # Create DataFrame
+    lookup_df = pd.DataFrame(all_lookup_records)
+
+    if lookup_df.empty:
+        print("Warning: No concurrency data generated")
+        return output_path
 
     # Sort and clean
     lookup_df = lookup_df.sort_values(["datetime", "entity"]).reset_index(drop=True)
@@ -384,6 +400,10 @@ def create_concurrency_lookup_dataset(
         f"   Time range: {lookup_df['datetime'].min()} to {lookup_df['datetime'].max()}"
     )
     print(f"   Entities: {lookup_df['entity'].nunique()}")
+    airport_entries = lookup_df[lookup_df['airport'].notna()]
+    group_entries = lookup_df[lookup_df['airport'].isna()]
+    print(f"   Airport-level entries: {len(airport_entries)} ({airport_entries['airport'].nunique()} unique airports)")
+    print(f"   Group-level entries: {len(group_entries)} ({group_entries['airport_group'].nunique()} unique groups)")
 
     return output_path
 
@@ -392,6 +412,10 @@ def load_concurrency_lookup(
     data_dir: Optional[Path] = None, filename: str = "concurrency_lookup.csv"
 ) -> Optional[pd.DataFrame]:
     """Load pre-computed concurrency lookup dataset.
+
+    The dataset contains both airport-level and group-level concurrency data:
+    - Rows with airport != None: individual airport concurrency
+    - Rows with airport == None: airport group concurrency
 
     Returns None if file doesn't exist.
     """
