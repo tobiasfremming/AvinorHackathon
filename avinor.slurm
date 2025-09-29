@@ -5,7 +5,6 @@
 #SBATCH --partition=GPUQ          # GPU partition
 #SBATCH --mem=64G                 # Asking for 64GB RAM
 #SBATCH --nodes=1
-#SBATCH --gres=gpu:1              # Request 1 GPU
 #SBATCH --output=outavinor.txt      # Specifying 'stdout'
 #SBATCH --error=outavinor.err        # Specifying 'stderr'
 #SBATCH --mail-user=afrasum@stud.ntnu.no
@@ -28,9 +27,8 @@ python -m venv autogluon_venv
 source autogluon_venv/bin/activate
 pip install --upgrade pip
 
-# Install AutoGluon with GPU support
-pip install autogluon.tabular[all]
-pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
+# Install AutoGluon first (picky about dependency versions)
+pip install autogluon.tabular
 
 # Install minimal requirements for autogluon.py
 if [ -f "requirements_minimal.txt" ]; then
