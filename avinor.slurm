@@ -21,14 +21,20 @@ echo "The job was run on these nodes: $SLURM_JOB_NODELIST"
 
 module purge
 
-# Load Python and create virtual environment
+# Load Python and create completely isolated virtual environment
 module load Python/3.11.3-GCCcore-12.3.0
-python -m venv autogluon_venv
+python -m venv --clear autogluon_venv
 source autogluon_venv/bin/activate
+
+# Ensure no system packages interfere
+export PYTHONNOUSERSITE=1
+export PIP_NO_DEPS=false
+export PIP_IGNORE_INSTALLED=true
+
 pip install --upgrade pip
 
-# Install AutoGluon with force-reinstall to handle conflicts
-pip install --force-reinstall autogluon.tabular
+# Install AutoGluon in isolated environment
+pip install --no-cache-dir --isolated autogluon.tabular
 
 # Set multiprocessing environment for AutoGluon
 export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK:-16}
