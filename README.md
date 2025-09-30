@@ -3,13 +3,13 @@
 
 <div align="center">
 
-![GitHub Workflow Status (with event)](https://img.shields.io/github/actions/workflow/status/tobiasfremming/AvinorHackathon/ci.yml)
-![GitHub top language](https://img.shields.io/github/languages/top/tobiasfremming/AvinorHackathon)
-![GitHub language count](https://img.shields.io/github/languages/count/tobiasfremming/AvinorHackathon)
+![GitHub Workflow Status (with event)](https://img.shields.io/github/actions/workflow/status/CogitoNTNU/AvinorCompetition/ci.yml)
+![GitHub top language](https://img.shields.io/github/languages/top/CogitoNTNU/AvinorCompetition)
+![GitHub language count](https://img.shields.io/github/languages/count/CogitoNTNU/AvinorCompetition)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Project Version](https://img.shields.io/badge/version-0.0.1-blue)](https://img.shields.io/badge/version-0.0.1-blue)
 
-
+<img src="docs/images/project-logo.webp" width="50%" alt="Cogito Project Logo" style="display: block; margin-left: auto; margin-right: auto;">
 </div>
 
 <details> 
@@ -30,9 +30,6 @@
 ## Description
 
 <!-- TODO: Provide a brief overview of what this project does and its key features. Please add pictures or videos of the application -->
-This is our solution for Avinor’s data competition on the development of a concurrency model. The model predicts the probability that AFIS officers will need to communicate with multiple aircraft simultaneously, with a focus on understanding workload in multiple-operations scenarios.
-
-The task requires the development of a concurrency model that predicts the probability of simultaneous dialogue between AFIS officers and multiple aircraft. The main challenge does not lie in the planned flight schedules, which Avinor already has access to, but in predicting deviations from scheduled times and translating these into concurrency probabilities. Our approach focuses on modeling delays and irregularities that affect actual air traffic, as well as weather-related and operational factors that increase the need for communication.
 
 ## 🛠️ Prerequisites
 
@@ -83,7 +80,6 @@ For example: OS version, programs, libraries, etc.
 To run the project, run the following command from the root directory of the project:
 
 ```bash
-avinorhackathon
 
 ```
 
@@ -112,7 +108,20 @@ uv run pytest --doctest-modules --cov=src --cov-report=html
 
 This project would not have been possible without the hard work and dedication of all of the contributors. Thank you for the time and effort you have put into making this project a reality.
 
+<table align="center">
+    <tr>
+        <!--
+        <td align="center">
+            <a href="https://github.com/NAME_OF_MEMBER">
+              <img src="https://github.com/NAME_OF_MEMBER.png?size=100" width="100px;" alt="NAME OF MEMBER"/><br />
+              <sub><b>NAME OF MEMBER</b></sub>
+            </a>
+        </td>
+        -->
+    </tr>
+</table>
 
+![Group picture](docs/img/team.png)
 
 ### License
 
