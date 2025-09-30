@@ -68,7 +68,7 @@ echo "  Java Options: ${_JAVA_OPTIONS}"
 # Run the H2O script
 echo "Starting H2O AutoML training with ${SLURM_CPUS_PER_TASK:-32} CPUs..."
 cd prediction
-python h2o.py
+python h2o_pipeline.py
 
 echo "Installed packages:"
 pip freeze
