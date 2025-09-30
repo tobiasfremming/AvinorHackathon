@@ -1,0 +1,52 @@
+@startuml
+title Concurrency Prediction – Data Flow (from concurrency_prediction.ipynb)
+
+' --- Inputs ---
+database "scheduled_concurrency.csv" as SCHED
+database "predicted_concurrency.csv" as PRED
+database "actual_concurrency.csv" as ACT
+
+database "scheduled_concurrency_october_24.csv" as SCHED_TEST
+database "predicted_concurrency_october_24.csv" as PRED_TEST
+database "actual_concurrency_october_24.csv" as ACT_TEST
+
+' --- Build main/train & test dataframes ---
+rectangle "Build df\n• select ['airport_group','date','hour']\n• add scheduled_* from df_scheduled\n• add predicted_* from df_predicted\n• target: is_concurrency = df_actual['is_concurrency']" as BUILD
+rectangle "Build df_test\n• same columns as df\n• target from df_actual_test" as BUILD_TEST
+
+SCHED --> BUILD
+PRED  --> BUILD
+ACT   --> BUILD
+
+SCHED_TEST --> BUILD_TEST
+PRED_TEST  --> BUILD_TEST
+ACT_TEST   --> BUILD_TEST
+
+' --- Preprocessing / time features ---
+rectangle "df_processed\n• combine date+hour -> datetime\n• dep_hour/day_of_week/month/day_of_year\n• circular encodings: hour_sin/cos,\n  day_of_week_sin/cos, month_sin/cos,\n  day_of_year_sin/cos\n• year, airport_group/category typing" as PREP
+rectangle "df_processed_test\n(same steps)" as PREP_TEST
+
+BUILD --> PREP
+BUILD_TEST --> PREP_TEST
+
+' --- Feature selection for modeling ---
+rectangle "feature_columns\n['airport_group','year','hour_sin','hour_cos',\n 'day_of_week_sin','day_of_week_cos','month_sin','month_cos',\n 'day_of_year_sin','day_of_year_cos',\n 'scheduled_concurrency','scheduled_number_of_flights',\n 'scheduled_overlapping_time_minutes',\n 'scheduled_is_concurrency','date']" as FEATS
+
+rectangle "model_data = df_processed[feature_columns + ['is_concurrency']]\nmodel_data_test = df_processed_test[feature_columns + ['is_concurrency']]" as MODELSETS
+
+PREP --> FEATS
+FEATS --> MODELSETS
+PREP_TEST --> FEATS
+
+' --- H2O conversion & AutoML ---
+rectangle "train_df / test_df\n(copy of model_data / model_data_test)" as SPLIT
+rectangle "train = H2OFrame(train_df.drop(['date']))\ntest  = H2OFrame(test_df.drop(['date']))" as H2OFRAMES
+rectangle "H2OAutoML (binary)\nmax_models, max_runtime_secs,\nbalance_classes, seed,\nsort_metric='AUC', include_algos=..." as AUTOML
+rectangle "best_model = aml.leader\npredictions = best_model.predict(test)\ntest_performance = best_model.model_performance(test)\nvarimp = best_model.varimp(...)" as OUTPUTS
+
+MODELSETS --> SPLIT
+SPLIT --> H2OFRAMES
+H2OFRAMES --> AUTOML
+AUTOML --> OUTPUTS
+
+@enduml

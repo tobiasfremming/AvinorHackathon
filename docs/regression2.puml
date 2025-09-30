@@ -1,0 +1,71 @@
+@startuml
+title ML Project Architecture
+
+skinparam packageStyle rect
+skinparam class {
+  BackgroundColor<<process>> #F0F7FF
+  BackgroundColor<<dataset>> #F6FFF0
+  BackgroundColor<<pipeline>> #FFF7F0
+  BackgroundColor<<artifact>> #F3F0FF
+  BorderColor #555555
+}
+
+package "Data Layer" {
+  class Data <<datasets>> {
+
+  }
+
+  class FeatureTableCSV <<dataset>> {
+   
+  }
+
+  class TrainedModel <<artifact>> {
+   
+  }
+}
+
+package "Preprocessing" {
+  class Preprocessing <<process>> {
+
+  }
+}
+
+package "Feature Engineering" {
+  class FeatureEngineering <<process>> {
+
+  }
+}
+
+package "Model Training" {
+  class h2o_regression_pipeline2 <<pipeline>> {
+ 
+  }
+}
+
+/' Data flow (left → right) '/
+RawHistoricalFlights --> Preprocessing : reads
+Preprocessing --> FeatureEngineering : cleaned data
+FeatureEngineering --> FeatureTableCSV : writes CSV
+FeatureTableCSV --> h2o_regression_pipeline2 : training input
+h2o_regression_pipeline2 --> TrainedModel : saves
+
+
+note right of FeatureEngineering
+  Generates a single feature table
+  used in training runs.
+end note
+
+note right of h2o_regression_pipeline2
+  H2O regression pipeline:
+  preprocessing inside H2O if needed,
+  model training & selection,
+  model persisted to Data Layer.
+end note
+
+legend left
+  <<process>>   Processing step
+  <<dataset>>   Data artifact / table
+  <<pipeline>>  ML pipeline
+  <<artifact>>  Saved model
+end legend
+@enduml
