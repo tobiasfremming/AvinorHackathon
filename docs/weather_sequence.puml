@@ -1,0 +1,31 @@
+@startuml
+title Weather Data Collection – Simplified API Flow
+
+actor User
+participant Script
+participant "airport_coordinates.csv" as AC
+participant "historical_flights.csv" as HF
+participant "Open-Meteo API" as API
+participant "weather_chunks/*.csv" as CH
+participant "weather_data.csv" as FINAL
+
+User -> Script: Run script
+Script -> AC: Load airport coordinates
+Script -> HF: Load historical flights
+Script -> Script: Build flight_times_unique\n(group by airport, hourly)
+
+loop For each airport
+  Script -> API: GET /v1/archive (lat, lon,\nstart_date, end_date, hourly vars)
+  API --> Script: JSON hourly weather data
+  Script -> Script: Filter to needed hours
+  Script -> CH: Save weather_chunk_###.csv
+end
+
+Script -> CH: Read chunk files
+CH --> Script: DataFrames
+Script -> FINAL: Append to weather_data.csv
+FINAL --> Script: Acknowledgement
+
+Script -> User: Report summary\n(records, airports, date range)
+
+@enduml
